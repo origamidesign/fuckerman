@@ -310,7 +310,7 @@ function resizeCanvas(aboutToEnterFullscreen) {
 
 	// Compute the unconstrained size for the div that encloses the canvas, in CSS pixel units.
 	var cssWidth = Math.max(1, window.innerWidth);
-	var cssHeight = Math.max(1, window.innerHeight);
+	var cssHeight = Math.max(1, window.innerHeight - 44);
 
 	if (canvasWindowedScaleMode == 3/*NONE*/) {
 		// In fixed display mode, render to a statically determined WebGL render target size.

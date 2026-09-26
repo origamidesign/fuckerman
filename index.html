@@ -22,7 +22,7 @@
 
 	<link href="FuckermanPS-HTML5-Shipping.css" rel="stylesheet">
 </head>
-<body>
+<body><div id="arcade-toolbar"><button type="button" id="arcade-gun-toggle">Sortir / ranger le fusil</button></div>
 
 <div class="wrapper" id="mainarea">
 	<div class="alert alert-warning centered-axis-xy" style="min-height: 20px; display:none;" role="alert" id="compilingmessage">
@@ -100,6 +100,51 @@
 })();
 
 </script>
-<script src="FuckermanPS-HTML5-Shipping.UE4.js"></script>
+<script>(function () {
+  'use strict';
+  var canvas = document.getElementById('canvas');
+  var button = document.getElementById('arcade-gun-toggle');
+  var active = false;
+  var timer;
+  function key(type, code, value, number, shifted) {
+    var event = new KeyboardEvent(type, {
+      key: value, code: code, keyCode: number, which: number,
+      shiftKey: shifted, bubbles: true, cancelable: true
+    });
+    // The older Emscripten runtime reads these legacy fields.
+    if (event.keyCode !== number) Object.defineProperty(event, 'keyCode', { value: number });
+    if (event.which !== number) Object.defineProperty(event, 'which', { value: number });
+    canvas.dispatchEvent(event);
+  }
+  function release() {
+    if (!active) return;
+    clearTimeout(timer);
+    active = false;
+    key('keyup', 'Digit1', '1', 49, true);
+    key('keyup', 'ShiftLeft', 'Shift', 16, false);
+  }
+  // Keep toolbar clicks from reaching the engine's mouse handlers.
+  ['mousedown', 'mouseup', 'pointerdown', 'pointerup', 'dblclick'].forEach(function (type) {
+    window.addEventListener(type, function (event) {
+      if (button.contains(event.target)) event.stopImmediatePropagation();
+    }, true);
+  });
+  window.addEventListener('click', function (event) {
+    if (!button.contains(event.target)) return;
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    if (!window.Module || !Module.calledRun || active) return;
+    canvas.focus();
+    active = true;
+    key('keydown', 'ShiftLeft', 'Shift', 16, true);
+    key('keydown', 'Digit1', '1', 49, true);
+    timer = setTimeout(release, 100);
+  }, true);
+  window.addEventListener('blur', release);
+  document.addEventListener('visibilitychange', function () {
+    if (document.hidden) release();
+  });
+})();
+</script><script src="FuckermanPS-HTML5-Shipping.UE4.js"></script>
 </body>
 </html>
