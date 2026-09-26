@@ -351,13 +351,6 @@ function resizeCanvas(aboutToEnterFullscreen) {
 
 	Module['canvas'].style.width = cssWidth + 'px';
 	Module['canvas'].style.height = mainArea.style.height = cssHeight + 'px';
-	// Anchor the control to the actual canvas, including letterboxing.
-	var arcadeToolbar = document.getElementById('arcade-toolbar');
-	if (arcadeToolbar) {
-		var gameBounds = Module['canvas'].getBoundingClientRect();
-		arcadeToolbar.style.top = (gameBounds.top + 8) + 'px';
-		arcadeToolbar.style.right = Math.max(8, window.innerWidth - gameBounds.right + 8) + 'px';
-	}
 
 	// Tell the engine that the web page has changed the size of the WebGL render target on the canvas (Module['canvas'].width/height).
 	// This will update the GL viewport and propagate the change throughout the engine.

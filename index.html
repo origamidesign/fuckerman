@@ -22,7 +22,7 @@
 
 	<link href="FuckermanPS-HTML5-Shipping.css" rel="stylesheet">
 </head>
-<body><div id="arcade-toolbar"><button type="button" id="arcade-gun-toggle">Sortir / ranger le fusil</button></div>
+<body>
 
 <div class="wrapper" id="mainarea">
 	<div class="alert alert-warning centered-axis-xy" style="min-height: 20px; display:none;" role="alert" id="compilingmessage">
@@ -103,46 +103,63 @@
 <script>(function () {
   'use strict';
   var canvas = document.getElementById('canvas');
-  var button = document.getElementById('arcade-gun-toggle');
-  var active = false;
-  var timer;
-  function key(type, code, value, number, shifted) {
+  var held = new Set();
+  var dispatching = false;
+  function source(event) {
+    if (event.code === 'Digit1' || event.code === 'Numpad1') return event.code;
+    if (event.key === '1' || event.key === '&') return 'Legacy1';
+    return null;
+  }
+  function focused() {
+    return document.activeElement === canvas || document.pointerLockElement === canvas;
+  }
+  function send(type) {
+    var charCode = type === 'keypress' ? 49 : 0;
     var event = new KeyboardEvent(type, {
-      key: value, code: code, keyCode: number, which: number,
-      shiftKey: shifted, bubbles: true, cancelable: true
+      key: '1', code: 'Digit1', location: 0, shiftKey: false,
+      keyCode: 49, which: 49, charCode: charCode,
+      bubbles: true, cancelable: true, repeat: false
     });
-    // The older Emscripten runtime reads these legacy fields.
-    if (event.keyCode !== number) Object.defineProperty(event, 'keyCode', { value: number });
-    if (event.which !== number) Object.defineProperty(event, 'which', { value: number });
-    canvas.dispatchEvent(event);
+    [['keyCode', 49], ['which', 49], ['charCode', charCode]].forEach(function (entry) {
+      if (event[entry[0]] !== entry[1]) Object.defineProperty(event, entry[0], { value: entry[1] });
+    });
+    dispatching = true;
+    try { canvas.dispatchEvent(event); } finally { dispatching = false; }
   }
-  function release() {
-    if (!active) return;
-    clearTimeout(timer);
-    active = false;
-    key('keyup', 'Digit1', '1', 49, true);
-    key('keyup', 'ShiftLeft', 'Shift', 16, false);
-  }
-  // Keep toolbar clicks from reaching the engine's mouse handlers.
-  ['mousedown', 'mouseup', 'pointerdown', 'pointerup', 'dblclick'].forEach(function (type) {
-    window.addEventListener(type, function (event) {
-      if (button.contains(event.target)) event.stopImmediatePropagation();
-    }, true);
-  });
-  window.addEventListener('click', function (event) {
-    if (!button.contains(event.target)) return;
+  function consume(event) {
     event.preventDefault();
     event.stopImmediatePropagation();
-    if (!window.Module || !Module.calledRun || active) return;
-    canvas.focus();
-    active = true;
-    key('keydown', 'ShiftLeft', 'Shift', 16, true);
-    key('keydown', 'Digit1', '1', 49, true);
-    timer = setTimeout(release, 100);
+  }
+  window.addEventListener('keydown', function (event) {
+    if (dispatching) return;
+    var id = source(event);
+    if (!id || event.ctrlKey || event.altKey || event.metaKey || !focused()) return;
+    consume(event);
+    if (held.has(id) || event.repeat) return;
+    var first = held.size === 0;
+    held.add(id);
+    if (first) { send('keydown'); send('keypress'); }
   }, true);
-  window.addEventListener('blur', release);
+  window.addEventListener('keypress', function (event) {
+    if (!dispatching && source(event) && held.size && focused()) consume(event);
+  }, true);
+  window.addEventListener('keyup', function (event) {
+    if (dispatching) return;
+    var id = source(event);
+    if (!id || !held.has(id)) return;
+    consume(event);
+    held.delete(id);
+    if (!held.size) send('keyup');
+  }, true);
+  function releaseAll() {
+    if (!held.size) return;
+    held.clear();
+    send('keyup');
+  }
+  window.addEventListener('blur', releaseAll);
+  canvas.addEventListener('blur', releaseAll);
   document.addEventListener('visibilitychange', function () {
-    if (document.hidden) release();
+    if (document.hidden) releaseAll();
   });
 })();
 </script><script src="FuckermanPS-HTML5-Shipping.UE4.js"></script>
