@@ -132,3 +132,7 @@ html, body {
 #arcade-gun-toggle { color: #fff; background: #343434; border: 1px solid #888; border-radius: 5px; padding: 5px 16px; font: bold 14px Arial, sans-serif; cursor: pointer; }
 #arcade-gun-toggle:focus-visible { outline: 2px solid #fff; }
 #mainarea.wrapper { top: 44px; height: calc(100% - 44px) !important; }
+/* Overlay inside the visible game canvas, without an external toolbar. */
+#mainarea.wrapper { top: 0; height: 100% !important; }
+#arcade-toolbar { top: 8px; right: 8px; left: auto; width: auto; height: auto; background: transparent; }
+#arcade-gun-toggle { padding: 6px 10px; font-size: clamp(10px, 2vw, 14px); background: rgba(20,20,20,.8); }
