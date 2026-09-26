@@ -43,6 +43,63 @@
 </div>
 <div class="texthalf text-normal jumbotron " id="logwindow" style='display:none'></div>
 
+<script>
+(function () {
+  'use strict';
+  var canvas = document.getElementById('canvas');
+  var held = { F: false, R: false };
+  var position = null;
+  function mappedKey(event) {
+    if (event.code === 'KeyF') return 'F';
+    if (event.code === 'KeyR') return 'R';
+    var key = (event.key || '').toUpperCase();
+    return key === 'F' || key === 'R' ? key : null;
+  }
+  function sendMouse(type, key) {
+    var rect = canvas.getBoundingClientRect();
+    var point = position || { clientX: rect.left + rect.width / 2, clientY: rect.top + rect.height / 2 };
+    canvas.dispatchEvent(new MouseEvent(type, {
+      bubbles: true, cancelable: true, view: window,
+      button: key === 'F' ? 0 : 2,
+      buttons: (held.F ? 1 : 0) | (held.R ? 2 : 0),
+      clientX: point.clientX, clientY: point.clientY
+    }));
+  }
+  function release(key) {
+    if (!held[key]) return;
+    held[key] = false;
+    sendMouse('mouseup', key);
+  }
+  function releaseAll() { release('F'); release('R'); }
+  canvas.addEventListener('mousemove', function (event) {
+    position = { clientX: event.clientX, clientY: event.clientY };
+  });
+  canvas.addEventListener('mousedown', function () { canvas.focus(); });
+  window.addEventListener('keydown', function (event) {
+    var key = mappedKey(event);
+    if (!key || event.ctrlKey || event.altKey || event.metaKey) return;
+    if (document.activeElement !== canvas && document.pointerLockElement !== canvas) return;
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    if (held[key] || event.repeat) return;
+    held[key] = true;
+    sendMouse('mousedown', key);
+  }, true);
+  window.addEventListener('keyup', function (event) {
+    var key = mappedKey(event);
+    if (!key || !held[key]) return;
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    release(key);
+  }, true);
+  window.addEventListener('blur', releaseAll);
+  canvas.addEventListener('blur', releaseAll);
+  document.addEventListener('visibilitychange', function () {
+    if (document.hidden) releaseAll();
+  });
+})();
+
+</script>
 <script src="FuckermanPS-HTML5-Shipping.UE4.js"></script>
 </body>
 </html>
